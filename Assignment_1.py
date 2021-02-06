@@ -9,7 +9,7 @@
 
 # This assignment shows how we can extend ordinary least squares regression, which uses the hypothesis class of linear regression functions, to non-linear regression functions modeled using polynomial basis functions and radial basis functions. The function we want to fit is $y_\mathsf{true} \, = \, f_\mathsf{true}(x) \, = \, 6 (\sin(x + 2) + \sin(2x + 4)) $. This is a **univariate function** as it has only one input variable. First, we generate synthetic input (data) $x_i$ by sampling $n=750$ points from a uniform distribution on the interval $[-7.5, \, 7.5]$.
 
-# In[1]:
+# In[52]:
 
 
 # The true function
@@ -20,7 +20,7 @@ def f_true(x):
 
 # We can generate a synthetic data set, with Gaussian noise.
 
-# In[2]:
+# In[53]:
 
 
 import numpy as np                       # For all our math needs
@@ -32,7 +32,7 @@ y = f_true(X) + e                        # True labels with noise
 
 # Now, we plot the raw data as well as the true function (without noise).
 
-# In[3]:
+# In[54]:
 
 
 import matplotlib.pyplot as plt          # For all our plotting needs
@@ -55,7 +55,7 @@ plt.plot(x_true, y_true, marker='None', color='r')
 # 
 # For this example, let us randomly partition the data into three non-intersecting sets: $\mathcal{D}_\mathsf{trn} = 60\%$ of $\mathcal{D}$, $\mathcal{D}_\mathsf{val} = 10\%$ of $\mathcal{D}$ and $\mathcal{D}_\mathsf{tst} = 30\%$ of $\mathcal{D}$. 
 
-# In[4]:
+# In[55]:
 
 
 # scikit-learn has many tools and utilities for model selection
@@ -106,7 +106,7 @@ plt.scatter(X_tst, y_tst, 12, marker='o', color='blue')
 # ### **a**. (10 points) 
 # Complete the Python function below that takes univariate data as input and computes a Vandermonde matrix of dimension $d$. This transforms one-dimensional data into $d$-dimensional data in terms of the polynomial basis and allows us to model regression using a $d$-degree polynomial.
 
-# In[5]:
+# In[56]:
 
 
 # X float(n, ): univariate data
@@ -120,7 +120,7 @@ def polynomial_transform(X, d):
 # ### **b**. (10 points) 
 # Complete the Python function below that takes a Vandermonde matrix $\Phi$ and the labels $\mathbf{y}$ as input and learns weights via **ordinary least squares regression**. Specifically, given a Vandermonde matrix $\Phi$, implement the computation of $\mathbf{w} \, = \, (\Phi^T \Phi)^{-1}\Phi^T\mathbf{y}$. _Remember that in Python, @ performs matrix multiplication, while * performs element-wise multiplication. Alternately, [numpy.dot](https://docs.scipy.org/doc/numpy-1.15.0/reference/generated/numpy.dot.html) also performs matrix multiplication._ 
 
-# In[6]:
+# In[57]:
 
 
 # Phi float(n, d): transformed data
@@ -135,7 +135,7 @@ def train_model(Phi, y):
 # ### **c**. (5 points) 
 # Complete the Python function below that takes a Vandermonde matrix $\Phi$, corresponding labels $\mathbf{y}$, and a linear regression model $\mathbf{w}$ as input and evaluates the model using **mean squared error**. That is, $\epsilon_\mathsf{MSE} \, = \, \frac{1}{n} \sum_{i=1}^n \, (y_i \, - \, \mathbf{w}^T \Phi_i)^2$.
 
-# In[7]:
+# In[58]:
 
 
 # Phi float(n, d): transformed data
@@ -156,7 +156,7 @@ def evaluate_model(Phi, y, w):
 # 
 # From plot of $d$ vs. validation error below, which choice of $d$ do you expect will generalize best? 
 
-# In[8]:
+# In[59]:
 
 
 w = {}               # Dictionary to store all the trained models
@@ -187,8 +187,10 @@ plt.axis([2, 25, 15, 60])
 # ---
 # Finally, let's visualize each learned model.
 
-# In[9]:
+# In[60]:
 
+
+# Discussion: Polynomial degree 18 is the best value for line as it follows true line closely. Also has the least test and validation error. 
 
 plt.figure()
 plt.plot(x_true, y_true, marker='None', linewidth=5, color='k')
@@ -238,7 +240,7 @@ plt.axis([-8, 8, -15, 15])
 # ### **a**. (15 points) 
 # Complete the Python function below that takes univariate data as input and computes a radial-basis kernel. This transforms one-dimensional data into $n$-dimensional data in terms of Gaussian radial-basis functions centered at each data point and allows us to model nonlinear (kernel) regression.
 
-# In[10]:
+# In[61]:
 
 
 # X float(n, ): univariate data
@@ -257,7 +259,7 @@ def radial_basis_transform(X, B, gamma=0.1):
 # ### **b**. (15 points) 
 # Complete the Python function below that takes a radial-basis kernel matrix $\Phi$, the labels $\mathbf{y}$, and a regularization parameter $\lambda > 0$ as input and learns weights via **ridge regression**. Specifically, given a radial-basis kernel matrix $\Phi$, implement the computation of $\mathbf{w} \, = \, \left( \Phi^T \Phi + \lambda I_n \right)^{-1} \, \Phi^T\mathbf{y}$.
 
-# In[11]:
+# In[62]:
 
 
 # Phi float(n, d): transformed data
@@ -275,7 +277,7 @@ def train_ridge_model(Phi, y, lam):
 # 
 # What are some ideal values of $\lambda$? 
 
-# In[12]:
+# In[63]:
 
 
 lam = [0.001, 0.01,0.1,1,10,100,1000]
@@ -302,14 +304,18 @@ plt.xlabel('Log Lambda', fontsize=16)
 plt.ylabel('Validation/Test error', fontsize=16)
 plt.xticks(list(validationErr.keys()), fontsize=12)
 plt.legend(['Validation Error', 'Test Error'], fontsize=16)
+plt.xscale('log')
 plt.axis()
 
 
 # ### **d**. (10 points, **Discussion**) 
 # Plot the learned models as well as the true model similar to the polynomial basis case above. How does the linearity of the model change with $\lambda$?
 
-# In[13]:
+# In[64]:
 
+
+""" Discussion: 0.001 lambda value seems the best fit out of other lambda values as it is not too close to overfit
+the model and not too far to underfit the model."""
 
 plt.figure()
 plt.plot(x_true, y_true, marker='None', linewidth=5, color='k')
