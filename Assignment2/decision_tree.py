@@ -30,7 +30,6 @@ import numpy as np
 import os
 import graphviz
 
-
 def partition(x):
     """
     Partition the column vector x into subsets indexed by its unique values (v1, ... vk)
@@ -235,6 +234,7 @@ if __name__ == '__main__':
     M = np.genfromtxt('./monks-1.test', missing_values=0, skip_header=0, delimiter=',', dtype=int)
     ytst = M[:, 0]
     Xtst = M[:, 1:]
+    print(x)
 
     # Learn a decision tree of depth 3
     decision_tree = id3(Xtrn, ytrn, max_depth=3)
