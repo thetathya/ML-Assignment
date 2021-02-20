@@ -1,25 +1,146 @@
-a = "111010"
-b = "0101001"
-n = max(len(a), len(b))
-a,b = a.zfill(n), b.zfill(n)
-carry = 0
-answ = []
+import numpy as np
+from sklearn import tree
+from matplotlib import pyplot as plt
+from sklearn.metrics import plot_confusion_matrix, accuracy_score
+import math
+from numpy import unravel_index
 
-for i in range(n-1,-1,-1):
-	# print(a[i],b[i], answ[i])
-	if a[i] == '1':
-		carry += 1
-	if b[i] == '1':
-		carry += 1
+M = np.genfromtxt('./monks-1.train', missing_values=0, skip_header=0, delimiter=',', dtype=int)
+# ytrn = M[:, 0]
+# Xtrn = M[:, 1:]
+y = M[:, 0]
+x = M[:, 1:]
+
+
+# Load the test data
+M = np.genfromtxt('./monks-1.test', missing_values=0, skip_header=0, delimiter=',', dtype=int)
+ytst = M[:, 0]
+Xtst = M[:, 1:]
+
+
+
+def entropy(y):
+    """
+    Compute the entropy of a vector y by considering the counts of the unique values (v1, ... vk), in z
+
+    Returns the entropy of z: H(z) = p(z=v1) log2(p(z=v1)) + ... + p(z=vk) log2(p(z=vk))
+    """
+    h = 0
+    val, cnt = np.unique(y,  return_counts=True)
+    for c in cnt:
+        h = h + (c/len(y))*(math.log(c/len(y),2))
+    return -h
+
+
+def mutual_information(x, y):
+    """
+    Compute the mutual information between a data column (x) and the labels (y). The data column is a single attribute
+    over all the examples (n x 1). Mutual information is the difference between the entropy BEFORE the split set, and
+    the weighted-average entropy of EACH possible split.
+
+    Returns the mutual information: I(x, y) = H(y) - H(y | x)
+    """
+    eny = entropy(y)
+    # print(eny)
+    mi = 0
+    x = 0
+    val, cnt = np.unique(x,  return_counts=True)
+    for v in val:
+        newy1 = y[np.where(x==v)[0]]
+        newy2 = y[np.where(x!=v)[0]]
+        x = (eny - ((len(newy1)/len(y))*(entropy(newy1))+((len(newy2))/len(y))*entropy(newy2)))
+        # print(v ,eny, x)
+        mi = mi + x
+    return mi
+
+def id3(x,y):
+	info_gain = np.zeros(shape=(6,7))
+	for i in range(x.shape[1]):
+		val, cnt = np.unique(x[:,i],  return_counts=True)
+		for j in val:
+			info_gain[i][j] = mutual_information(x[np.where(x[:,i] == j)],y[np.where(x[:,i] == j)])
+			# print(i)
+	return info_gain
+
+
+def rec(x,y, max_depth=0):
+	de = {}
+	if max_depth<5:
+		if np.all(y == 1):
+			return 1
+		if np.all(y == 0):
+			return 0
+		node = id3(x,y)
+		node = (unravel_index(node.argmax(), node.shape))
+		x = (x[np.where(x[:,node[0]]!=node[1])])
+		y = (y[np.where(x[:,node[0]]!=node[1])])
+		# print(node,x,y)
+		de[node[0],node[1],True] = rec(x,y,max_depth+1)
+		x = (x[np.where(x[:,node[0]]==node[1])])
+		y = (y[np.where(x[:,node[0]]==node[1])])
+		de[node[0], node[1], False] = rec(x,y,max_depth+1)
+
+		return de
+
+
+
+de = (rec(x,y))
+print(de)
+
+# print(de[1,1,True])
+# print(info_gain[3][3])
+# fnode = id3(x,y)
+# fnode = (unravel_index(fnode.argmax(), fnode.shape))
+# # print(x)
+# x = (x[np.where(x[:,fnode[0]]!=fnode[1])])
+# y = (y[np.where(x[:,fnode[0]]!=fnode[1])])
+# snode = id3(x,y)
+# snode = (unravel_index(snode.argmax(), snode.shape))
+# x = (x[np.where(x[:,snode[0]]!=snode[1])])
+# y = (y[np.where(x[:,snode[0]]!=snode[1])])
+# snode = id3(x,y)
+# snode = (unravel_index(snode.argmax(), snode.shape))
+# x = (x[np.where(x[:,snode[0]]!=snode[1])])
+# y = (y[np.where(x[:,snode[0]]!=snode[1])])
+# print(snode)
+# snode = id3(x,y)
+# snode = (unravel_index(snode.argmax(), snode.shape))
+# x = (x[np.where(x[:,snode[0]]!=snode[1])])
+# y = (y[np.where(x[:,snode[0]]!=snode[1])])
+# print(snode)
+# snode = id3(x,y)
+# snode = (unravel_index(snode.argmax(), snode.shape))
+# x = (x[np.where(x[:,snode[0]]!=snode[1])])
+# y = (y[np.where(x[:,snode[0]]!=snode[1])])
+# print(snode)
+
+
+# print(x)
+
+
+
+
+# acc_test = {}
+# acc_train = {}
+
+# for i in range(1,11):
+# 	model = tree.DecisionTreeClassifier(criterion='entropy', max_depth=i)
+# 	model = model.fit(Xtrn, ytrn)
 	
-	if carry%2==1:
-		answ.append('1')
-	else:
-		answ.append('0')
-	carry = carry//2
-	print(a[i],b[i], answ, carry)
-if carry==1:
-	answ.append('1')
-answ.reverse()
+# 	predi = model.predict(Xtrn)
+# 	acc_train[i] = accuracy_score(ytrn, predi)
 
-print( ''.join(answ))
+# 	predi = model.predict(Xtst)
+# 	acc_test[i] = accuracy_score(ytst, predi)
+
+# print(acc_test,'\n' ,acc_train)
+
+# plot_confusion_matrix(model, Xtst, ytst)  
+# plt.show()  
+
+
+# tree.plot_tree(model)
+# plt.show()
+# print(model.score(Xtst, ytst))
+# Learn a decision tree of depth 3
+# decision_tree = id3(Xtrn, ytrn, max_depth=3)
