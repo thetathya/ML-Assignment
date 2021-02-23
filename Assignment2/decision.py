@@ -31,7 +31,6 @@ import os
 import graphviz
 import math
 
-
 def partition(x):
     """
     Partition the column vector x into subsets indexed by its unique values (v1, ... vk)
@@ -44,16 +43,14 @@ def partition(x):
     """
 
     # INSERT YOUR CODE HERE
-    d = {}
-    
-    for i in range(len(x)):
-        if (d.get(x[i]) == None):
-            d.update({x[i]: [i]})
-        else:
-            d.get(x[i]).append(i)
-    
-    return d
 
+    uval = np.unique(x)
+    d = {}
+    for i in range(len(uval)):
+        # print((x == uval[i]).nonzero()[0])
+        d[uval[i]] = (x == uval[i]).nonzero()[0]
+
+    return d
     raise Exception('Function not yet implemented!')
 
 
@@ -65,12 +62,13 @@ def entropy(y):
     """
 
     # INSERT YOUR CODE HERE
+
+
     h = 0
     val, cnt = np.unique(y,  return_counts=True)
     for c in cnt:
         h = h + (c/len(y))*(math.log(c/len(y),2))
     return -h
-
     raise Exception('Function not yet implemented!')
 
 
@@ -82,6 +80,8 @@ def mutual_information(x, y):
 
     Returns the mutual information: I(x, y) = H(y) - H(y | x)
     """
+
+    # INSERT YOUR CODE HERE
     dictX = partition(x)
     MI = entropy(y)
     
@@ -93,7 +93,6 @@ def mutual_information(x, y):
     
     return MI
 
-    # INSERT YOUR CODE HERE
     raise Exception('Function not yet implemented!')
 
 
@@ -139,90 +138,59 @@ def id3(x, y, attribute_value_pairs=None, depth=0, max_depth=5):
     """
 
     # INSERT YOUR CODE HERE. NOTE: THIS IS A RECURSIVE FUNCTION.
+    val, cnt = np.unique(y,  return_counts=True)
 
-    result = {}
+    #1. If the entire set of labels (y) is pure (all y = only 0 or only 1), then return that label
+    if len(val) == 1:
+        return val[0]
+    
 
-    if attribute_value_pairs == None:
+    #2. If the set of attribute-value pairs is empty or if the max_depth is reached, then return the most common value of y
+    if  depth==max_depth or x.shape[1] == 0:
+        return np.argmax(cnt)
+    
+
+    # If split_criteria=None, then create a Cartesian product of splits
+
+    if attribute_value_pairs is None:
         attribute_value_pairs = []
-
         for i in range(len(x)):
             for j in range(len(x[i])):
                 if (j, x[i][j]) not in attribute_value_pairs:
                     attribute_value_pairs.append((j, x[i][j]))
 
-    if len(y)==0:
-        return None
 
-    if base1(y):
-        return y[0]
 
-    if max_depth==depth or len(attribute_value_pairs)==0:
-        return base2(y)
+    #Calculating the best attribute-value pair using the mutual information
+    gain = []
 
-    highinfo = -1
-    fnode = ()
-    bxi = []
     for i in range(len(attribute_value_pairs)):
-        xi = x[:,attribute_value_pairs[i][0]]
-        mi = mutual_information(xi,y)
-        if highinfo < mi:
-            highinfo = mi
-            fnode = attribute_value_pairs[i]
-            bxi = xi
-
-    attribute_value_pairs.remove(fnode)
-
-    x1,y1,x2,y2 = splitData(x,y,bxi,fnode)   
-
-    result[fnode[0], fnode[1], True] = id3(x1,y1, attribute_value_pairs, depth+1, max_depth)
-    result[fnode[0], fnode[1], False] = id3(x2,y2, attribute_value_pairs, depth+1, max_depth) 
+        mi = mutual_information(x[:,attribute_value_pairs[i][0]]==attribute_value_pairs[i][1],y)
+        gain.append(mi)
 
 
-    return result
-    raise Exception('Function not yet implemented!')
+    #The best attribute-value pair
+    attribute, value = attribute_value_pairs[gain.index(max(gain))]
+    partitions = partition((x[:, attribute] == value))
+    # Removing the attribute-value pair which formed a node in the Decision tree from the list of attributes
+    # attribute_value_pairs = np.delete(attribute_value_pairs, np.argwhere(np.all(attribute_value_pairs == (attribute, value))), 0)
+    attribute_value_pairs = attribute_value_pairs.remove((attribute, value))
 
-
-def splitData(x,y,bxi,fnode):
-    x1, y1, x2, y2 = x, y, x, y
+    #Creating a node for the found best attribute-value pair
+    root = {}
     
-    i, m, n = 0, 0, 0
-    while i < len(x):
-        if bxi[i] != fnode[1]:
-            x1 = np.delete(x1, m, 0)
-            y1 = np.delete(y1, m, 0)
-            m -= 1
-        else:
-            x2 = np.delete(x2, n, 0)
-            y2 = np.delete(y2, n, 0)
-            n -= 1
-        i += 1
-        m += 1
-        n += 1
-            
-    return x1, y1, x2, y2
+
+    for split_value, indices in partitions.items():
+        x_subset = x.take(indices, axis=0)
+        y_subset = y.take(indices, axis=0)
+        decision = bool(split_value)
+
+        root[(attribute, value, decision)] = id3(x_subset, y_subset, attribute_value_pairs, depth + 1, max_depth)
+
+    return root
 
 
-
-
-def base1(y):
-    if len(y)==0 or np.all(y == 1) or np.all(y == 0):
-        return True
-    else:
-        return False
-
-
-def base2(y):
-    mx = 0
-    if len(y)==0:
-        return None
-    mcv = 0
-    d = partition(y)
-    for i in d.keys():
-        if len(d[i]) > mx:
-            mx = len(d[i])
-            mcv = i
-
-    return mcv
+    raise Exception('Function not yet implemented!')
 
 
 def predict_example(x, tree):
@@ -234,7 +202,6 @@ def predict_example(x, tree):
     """
 
     # INSERT YOUR CODE HERE. NOTE: THIS IS A RECURSIVE FUNCTION.
-
 
     if type(tree) != dict:
         return tree
@@ -262,16 +229,14 @@ def compute_error(y_true, y_pred):
     """
 
     # INSERT YOUR CODE HERE
-
-
     sum = 0
     for i in range(len(y_true)):
         if y_true[i] != y_pred[i]:
             sum += 1
-    
-    return sum / len(y_true)
+    sum = sum/len(y_true)
 
-    
+    return sum
+
     raise Exception('Function not yet implemented!')
 
 

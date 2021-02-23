@@ -22,39 +22,39 @@ Xtst = M[:, 1:]
 
 
 
-# def entropy(y):
-#     """
-#     Compute the entropy of a vector y by considering the counts of the unique values (v1, ... vk), in z
+def entropy(y):
+    """
+    Compute the entropy of a vector y by considering the counts of the unique values (v1, ... vk), in z
 
-#     Returns the entropy of z: H(z) = p(z=v1) log2(p(z=v1)) + ... + p(z=vk) log2(p(z=vk))
-#     """
-#     h = 0
-#     val, cnt = np.unique(y,  return_counts=True)
-#     for c in cnt:
-#         h = h + (c/len(y))*(math.log(c/len(y),2))
-#     return -h
+    Returns the entropy of z: H(z) = p(z=v1) log2(p(z=v1)) + ... + p(z=vk) log2(p(z=vk))
+    """
+    h = 0
+    val, cnt = np.unique(y,  return_counts=True)
+    for c in cnt:
+        h = h + (c/len(y))*(math.log(c/len(y),2))
+    return -h
 
 
-# def mutual_information(x, y):
-#     """
-#     Compute the mutual information between a data column (x) and the labels (y). The data column is a single attribute
-#     over all the examples (n x 1). Mutual information is the difference between the entropy BEFORE the split set, and
-#     the weighted-average entropy of EACH possible split.
+def mutual_information(x, y):
+    """
+    Compute the mutual information between a data column (x) and the labels (y). The data column is a single attribute
+    over all the examples (n x 1). Mutual information is the difference between the entropy BEFORE the split set, and
+    the weighted-average entropy of EACH possible split.
 
-#     Returns the mutual information: I(x, y) = H(y) - H(y | x)
-#     """
-#     eny = entropy(y)
-#     # print(eny)
-#     mi = 0
-#     x = 0
-#     val, cnt = np.unique(x,  return_counts=True)
-#     for v in val:
-#         newy1 = y[np.where(x==v)[0]]
-#         newy2 = y[np.where(x!=v)[0]]
-#         x = (eny - ((len(newy1)/len(y))*(entropy(newy1))+((len(newy2))/len(y))*entropy(newy2)))
-#         # print(v ,eny, x)
-#         mi = mi + x
-#     return mi
+    Returns the mutual information: I(x, y) = H(y) - H(y | x)
+    """
+    eny = entropy(y)
+    # print(eny)
+    mi = 0
+    x = 0
+    val, cnt = np.unique(x,  return_counts=True)
+    for v in val:
+        newy1 = y[np.where(x==v)[0]]
+        newy2 = y[np.where(x!=v)[0]]
+        x = (eny - ((len(newy1)/len(y))*(entropy(newy1))+((len(newy2))/len(y))*entropy(newy2)))
+        # print(v ,eny, x)
+        mi = mi + x
+    return mi
 
 # def id3(x,y):
 # 	info_gain = np.zeros(shape=(6,7))

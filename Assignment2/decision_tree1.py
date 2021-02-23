@@ -140,45 +140,47 @@ def id3(x, y, attribute_value_pairs=None, depth=0, max_depth=5):
 
     # INSERT YOUR CODE HERE. NOTE: THIS IS A RECURSIVE FUNCTION.
 
-    result = {}
+    list_of_classes, count_per_class_list = np.unique(y, return_counts=True)
 
-    if attribute_value_pairs == None:
-        attribute_value_pairs = []
+    #1. If the entire set of labels (y) is pure (all y = only 0 or only 1), then return that label
+    if len(list_of_classes) == 1:
+        return list_of_classes[0]
+    
+    #2. If the set of attribute-value pairs is empty or if the max_depth is reached, then return the most common value of y
+    if len(np.array(range(x.shape[1]))) == 0 or depth == max_depth:
+        return list_of_classes[np.argmax(count_per_class_list)]
+    
+    
 
-        for i in range(len(x)):
-            for j in range(len(x[i])):
-                if (j, x[i][j]) not in attribute_value_pairs:
-                    attribute_value_pairs.append((j, x[i][j]))
+    # If split_criteria=None, then create a Cartesian product of splits
+    if attribute_value_pairs is None:
+        attribute_value_pairs = np.vstack([[(i, v) for v in np.unique(x[:, i])] for i in range(x.shape[1])])
 
-    if len(y)==0:
-        return None
+    #Calculating the best attribute-value pair using the mutual information
+    information_gain = []
+    for i, j in attribute_value_pairs:
+        information_gain.append(mutual_information(np.array(x[:, i] == j).astype(int), y))
+    
 
-    if base1(y):
-        return y[0]
+    #The best attribute-value pair
+    (attribute, value) = attribute_value_pairs[np.argmax(information_gain)]
 
-    if max_depth==depth or len(attribute_value_pairs)==0:
-        return base2(y)
+    partitions = partition(list(x[:, attribute] == value))
+    
+    # Removing the attribute-value pair which formed a node in the Decision tree from the list of attributes
+    attribute_value_pairs = np.delete(attribute_value_pairs, np.argwhere(np.all(attribute_value_pairs == (attribute, value))), 0)
 
-    highinfo = -1
-    fnode = ()
-    bxi = []
-    for i in range(len(attribute_value_pairs)):
-        xi = x[:,attribute_value_pairs[i][0]]
-        mi = mutual_information(xi,y)
-        if highinfo < mi:
-            highinfo = mi
-            fnode = attribute_value_pairs[i]
-            bxi = xi
+    #Creating a node for the found best attribute-value pair
+    root = {}
+    
+    for split_value, indices in partitions.items():
+        x_subset = x.take(indices, axis=0)
+        y_subset = y.take(indices, axis=0)
+        decision = bool(split_value)
 
-    attribute_value_pairs.remove(fnode)
+        root[(attribute, value, decision)] = id3(x_subset, y_subset, max_depth, attribute_value_pairs, depth + 1)
 
-    x1,y1,x2,y2 = splitData(x,y,bxi,fnode)   
-
-    result[fnode[0], fnode[1], True] = id3(x1,y1, attribute_value_pairs, depth+1, max_depth)
-    result[fnode[0], fnode[1], False] = id3(x2,y2, attribute_value_pairs, depth+1, max_depth) 
-
-
-    return result
+    return root
     raise Exception('Function not yet implemented!')
 
 
