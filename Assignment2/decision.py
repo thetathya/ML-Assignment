@@ -30,6 +30,9 @@ import numpy as np
 import os
 import graphviz
 import math
+from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
 
 def partition(x):
     """
@@ -43,12 +46,15 @@ def partition(x):
     """
 
     # INSERT YOUR CODE HERE
-
-    uval = np.unique(x)
     d = {}
-    for i in range(len(uval)):
-        d[uval[i]] = (x == uval[i]).nonzero()[0]
+    for i in range(len(x)):
+        if (d.get(x[i]) == None):
+            d.update({x[i]: [i]})
+        else:
+            d.get(x[i]).append(i)
+    
     return d
+
     raise Exception('Function not yet implemented!')
 
 
@@ -80,16 +86,15 @@ def mutual_information(x, y):
     """
 
     # INSERT YOUR CODE HERE
-    dictX = partition(x)
-    MI = entropy(y)
+    eny = entropy(y)
+    mi = 0
+    val, cnt = np.unique(x,  return_counts=True)
+    for v in val:
+        newy1 = y[np.where(x==v)[0]]
+        newy2 = y[np.where(x!=v)[0]]
+        mi = (eny - ((len(newy1)/len(y))*(entropy(newy1))+((len(newy2))/len(y))*entropy(newy2)))
     
-    for v in dictX.values():
-        subNode = []
-        for i in v:
-            subNode.append(y[i])
-        MI -= (len(subNode) / len(y)) * entropy(subNode)
-    
-    return MI
+    return mi
 
     raise Exception('Function not yet implemented!')
 
@@ -181,8 +186,8 @@ def id3(x, y, attribute_value_pairs=None, depth=0, max_depth=5):
         # print(i,partitions[i], 'Here')
         xt = x.take(partitions[i], axis=0)
         yt = y.take(partitions[i], axis=0)
-        decision = bool(i)
-        root[(attribute, value, decision)] = id3(xt, yt, attribute_value_pairs, depth + 1, max_depth)
+        ans = bool(i)
+        root[(attribute, value, ans)] = id3(xt, yt, attribute_value_pairs, depth + 1, max_depth)
 
     return root
 
@@ -202,18 +207,18 @@ def predict_example(x, tree):
 
     if type(tree) != dict:
         return tree
-    
-    for k in tree.keys():
-        i = k[0]
-        val = k[1]
-        flag = k[2]
+    else:
+        for i in tree.keys():
+            ind = i[0]
+            val = i[1]
+            flag = i[2]
+            
+            if x[ind] == val and flag == True:
+                label = predict_example(x, tree[i])
+            if x[ind] != val and flag == False:
+                label = predict_example(x, tree[i])
         
-        if x[i] == val and flag == True:
-            nextLevel = predict_example(x, tree.get(k))
-        if x[i] != val and flag == False:
-            nextLevel = predict_example(x, tree.get(k))
-    
-    return nextLevel
+        return label
 
     raise Exception('Function not yet implemented!')
 
@@ -235,6 +240,35 @@ def compute_error(y_true, y_pred):
     return sum
 
     raise Exception('Function not yet implemented!')
+
+
+
+
+def learning_curve(Xtrn, ytrn, Xtst, ytst):
+    train_er={}
+    test_er={}
+    val_frac = 0.1
+    Xtrn, Xval, ytrn, yval = train_test_split(Xtrn, ytrn, test_size=val_frac, random_state=42)
+
+    for i in range(1,11):
+        decision_tree = id3(Xtrn, ytrn, max_depth=i)
+        y_pred_trn = [predict_example(x, decision_tree) for x in Xval]
+        trn_err = compute_error(yval, y_pred_trn)
+        train_er[i] = trn_err
+        y_pred_tst = [predict_example(x, decision_tree) for x in Xtst]
+        tst_err = compute_error(ytst, y_pred_tst)
+        test_er[i] = tst_err
+
+    plt.figure()
+    plt.title('Monks-1')
+    plt.plot(train_er.keys(), train_er.values(), marker='o', linewidth=3, markersize=12)
+    plt.plot(test_er.keys(), test_er.values(), marker='s', linewidth=3, markersize=12)
+    plt.xlabel('Depth of Tree', fontsize=16)
+    plt.ylabel('Train/Test error', fontsize=16)
+    plt.xticks(list(train_er.keys()), fontsize=12)
+    plt.legend(['Train Error', 'Test Error'], fontsize=16)
+    plt.show()
+
 
 
 def pretty_print(tree, depth=0):
@@ -336,6 +370,7 @@ if __name__ == '__main__':
     Xtst = M[:, 1:]
 
     # Learn a decision tree of depth 3
+    learning_curve(Xtrn, ytrn, Xtst, ytst)
     decision_tree = id3(Xtrn, ytrn, max_depth=3)
 
     # Pretty print it to console
@@ -348,5 +383,6 @@ if __name__ == '__main__':
     # Compute the test error
     y_pred = [predict_example(x, decision_tree) for x in Xtst]
     tst_err = compute_error(ytst, y_pred)
+    print(confusion_matrix(ytst, y_pred))
 
     print('Test Error = {0:4.2f}%.'.format(tst_err * 100))

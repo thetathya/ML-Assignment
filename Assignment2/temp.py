@@ -133,6 +133,7 @@ Xtrn[:,3] = label_encoder.fit_transform(Xtrn[:,3])
 Xtrn[:,4] = label_encoder.fit_transform(Xtrn[:,4])
 Xtrn[:,5] = label_encoder.fit_transform(Xtrn[:,5])
 ytrn = label_encoder.fit_transform(ytrn)
+print(Xtrn)
 
 Xtrn, Xtst, ytrn, ytst = train_test_split(Xtrn, ytrn, test_size=0.33, random_state=42)
 
