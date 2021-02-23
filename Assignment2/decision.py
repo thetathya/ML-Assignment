@@ -47,9 +47,7 @@ def partition(x):
     uval = np.unique(x)
     d = {}
     for i in range(len(uval)):
-        # print((x == uval[i]).nonzero()[0])
         d[uval[i]] = (x == uval[i]).nonzero()[0]
-
     return d
     raise Exception('Function not yet implemented!')
 
@@ -179,13 +177,12 @@ def id3(x, y, attribute_value_pairs=None, depth=0, max_depth=5):
     #Creating a node for the found best attribute-value pair
     root = {}
     
-
-    for split_value, indices in partitions.items():
-        x_subset = x.take(indices, axis=0)
-        y_subset = y.take(indices, axis=0)
-        decision = bool(split_value)
-
-        root[(attribute, value, decision)] = id3(x_subset, y_subset, attribute_value_pairs, depth + 1, max_depth)
+    for i in partitions.keys():
+        # print(i,partitions[i], 'Here')
+        xt = x.take(partitions[i], axis=0)
+        yt = y.take(partitions[i], axis=0)
+        decision = bool(i)
+        root[(attribute, value, decision)] = id3(xt, yt, attribute_value_pairs, depth + 1, max_depth)
 
     return root
 
