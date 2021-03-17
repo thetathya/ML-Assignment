@@ -190,7 +190,6 @@ def predict_example(x, tree):
     else:
         for i in tree.keys():
             ind,val, ans = i[0], i[1], i[2]
-            
             if x[ind] == val and ans == True:
                 label = predict_example(x, tree[i])
             if x[ind] != val and ans == False:
