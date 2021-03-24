@@ -78,8 +78,9 @@ print(cst/cs,cht/ch)
 
 # Logistic Regression
 ltotalwc = list(totalwc.keys())
-mat = np.zeros((sizett+1,len(ltotalwc)))
+mat = np.zeros((sizett+1,len(ltotalwc)+1))
 ind = 0
+calc = 0
 for i in x:
 	y = os.listdir("assignment3_train\\train\\" + i)
 	print(ind)
@@ -94,8 +95,10 @@ for i in x:
 				logwc[word] += 1
 		for k in logwc:
 			mat[ind][ltotalwc.index(k)] = logwc[k]
-			if i=="spam":
-				mat[ind][sizett+1] = 1
+		if i=="spam":
+			# print(i)
+			calc = calc + 1
+			mat[ind][len(ltotalwc)] = 1
 		ind = ind + 1
-
+print(calc)
 print(mat[341])
